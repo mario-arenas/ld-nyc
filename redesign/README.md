@@ -1,11 +1,12 @@
-# ld-nyc.com redesign (prototype)
+# ld-nyc.com website
 
-Astro static site. Builds plain HTML into `dist/`, so it can still be hosted free on GitHub Pages.
+Astro static site. It builds plain HTML into `../docs/`, which GitHub Pages serves at https://www.ld-nyc.com
+(Settings → Pages → Deploy from a branch → `redesign` → `/docs`).
 
 ```sh
 npm install
 npm run dev        # http://localhost:4321, reloads as you edit
-npm run build      # production build into dist/
+npm run build      # production build into ../docs/
 npm run preview    # serve the build
 ```
 
@@ -18,10 +19,25 @@ npm run preview    # serve the build
 - `src/components/`: header, footer, project card, LD monogram.
 - `scripts/import-legacy.mjs`: one-off import from the old site (one folder up). Re-running it overwrites `projects.json` and the photos.
 
-## Not done yet
+## Publishing a change
 
+GitHub Pages serves `docs/` as committed; it does not build anything. After editing:
+
+```sh
+npm run build                  # regenerates ../docs
+git add -A . ../docs
+git commit -m "Describe the change"
+git push                       # live in a minute or two
+```
+
+Edits made only in `src/` (for example on github.com) do not reach the site until someone rebuilds and commits `docs/`.
+
+## Notes
+
+- `public/CNAME` and `public/.nojekyll` must stay: the first keeps the custom domain, the second stops GitHub
+  from dropping the `_astro/` folder (it ignores folders starting with `_`).
+- `src/pages/[...legacy].ts` generates redirect pages for the old site's URLs (`/work/biggio.html`, `/about/us.html`, ...).
 - About, Press and Contact are sections on the home page, not their own pages.
-- Copy is a draft based on the old site and needs Doris's review.
 - Photos are the old 900px web copies. Higher-resolution originals will make a big difference.
-- No contact form yet: email and phone links only.
-- Not wired up to deploy; the live site is still the old one at the repo root.
+- No contact form: email and phone links only.
+- The previous site is preserved on the `legacy-site` branch.
