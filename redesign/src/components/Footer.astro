@@ -1,0 +1,70 @@
+---
+import Monogram from './Monogram.astro';
+const year = new Date().getFullYear();
+---
+<footer class="site-footer dark">
+  <div class="container grid">
+    <div class="brand">
+      <Monogram size={44} />
+      <p>LD Creative Renovations<br />Family-owned in New York since 1992</p>
+    </div>
+
+    <div>
+      <h2 class="label">Visit</h2>
+      <p>244 Fifth Avenue, Suite H210<br />New York, NY 10001</p>
+    </div>
+
+    <div>
+      <h2 class="label">Talk</h2>
+      <p><a href="tel:+17187936420">718.793.6420</a><br /><a href="mailto:dlozada@ld-nyc.com">dlozada@ld-nyc.com</a></p>
+    </div>
+
+    <div>
+      <h2 class="label">Follow</h2>
+      <p>
+        <a href="https://www.facebook.com/129059567111570" rel="noopener">Facebook</a><br />
+        <a href="https://x.com/LDCreativeNY" rel="noopener">X (Twitter)</a><br />
+        <a href="https://www.linkedin.com/in/dorislozada" rel="noopener">LinkedIn</a>
+      </p>
+    </div>
+  </div>
+
+  <div class="container fine">
+    <p>Member, Architectural Woodwork Institute · U.S. Green Building Council</p>
+    <p>© {year} LD Creative Renovations</p>
+  </div>
+</footer>
+
+<style>
+  .site-footer { padding-block: 72px 32px; font-size: 0.95rem; }
+  .grid { display: grid; grid-template-columns: 1.6fr repeat(3, 1fr); gap: 40px; }
+  .brand { display: flex; flex-direction: column; gap: 18px; color: var(--on-night); }
+  .brand p { color: var(--on-night-2); }
+  .label {
+    font: 500 0.75rem/1 var(--sans);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--on-night-2);
+    margin-bottom: 16px;
+  }
+  .grid a { text-decoration: none; }
+  .fine {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 8px 24px;
+    margin-top: 56px;
+    padding-top: 24px;
+    border-top: 1px solid var(--night-2);
+    color: var(--on-night-2);
+    font-size: 0.82rem;
+  }
+  .fine p { margin: 0; }
+  @media (max-width: 800px) {
+    .grid { grid-template-columns: 1fr 1fr; }
+    .brand { grid-column: 1 / -1; }
+  }
+  @media (max-width: 460px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+</style>

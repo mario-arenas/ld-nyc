@@ -1,0 +1,17 @@
+{
+  "name": "ld-nyc-redesign",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "import-legacy": "node scripts/import-legacy.mjs"
+  },
+  "dependencies": {
+    "@fontsource-variable/cormorant-garamond": "5.2.6",
+    "@fontsource-variable/jost": "5.2.6",
+    "astro": "7.3.4",
+    "sharp": "0.34.4"
+  }
+}

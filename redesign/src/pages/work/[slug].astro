@@ -1,0 +1,221 @@
+---
+import { Picture, getImage } from 'astro:assets';
+import Base from '../../layouts/Base.astro';
+import { projects, widthsFor, type Project } from '../../lib/projects';
+
+export function getStaticPaths() {
+  return projects.map((project, i) => ({
+    params: { slug: project.slug },
+    props: {
+      project,
+      prev: projects[(i - 1 + projects.length) % projects.length],
+      next: projects[(i + 1) % projects.length],
+    },
+  }));
+}
+
+interface Props {
+  project: Project;
+  prev: Project;
+  next: Project;
+}
+const { project, prev, next } = Astro.props;
+
+// Wide shots span both columns; narrow ones sit side by side.
+const photos = await Promise.all(
+  project.photos.map(async (image, i) => ({
+    image,
+    wide: image.width / image.height > 1.45,
+    full: (await getImage({ src: image, format: 'webp', width: image.width })).src,
+    alt: `${project.title}, photo ${i + 1} of ${project.photos.length}`,
+  })),
+);
+// Narrow photos pair up; an unpaired one at the end of a run goes full width so no half row is left empty.
+let run = 0;
+photos.forEach((p, i) => {
+  if (p.wide) return void (run = 0);
+  run++;
+  const runEnds = i === photos.length - 1 || photos[i + 1].wide;
+  if (runEnds && run % 2 === 1) p.wide = true;
+});
+
+const description =
+  project.description.length > 158 ? project.description.slice(0, 155).replace(/\s+\S*$/, '') + '…' : project.description;
+---
+<Base title={`${project.title} | Our Work | LD Creative Renovations`} description={description || `${project.title} by LD Creative Renovations.`} image={project.cover}>
+  <article>
+    <header class="container head">
+      <a class="back text-link" href="/work/">← All work</a>
+      <div class="head-grid">
+        <div>
+          <p class="eyebrow">{project.category}</p>
+          <h1>{project.title}</h1>
+        </div>
+        <div class="summary">
+          {project.description && <p class="lede">{project.description}</p>}
+          <dl>
+            <div><dt>Type</dt><dd>{project.typeLabel}</dd></div>
+            <div><dt>Location</dt><dd>New York, NY</dd></div>
+            <div><dt>Photos</dt><dd>{project.photos.length}</dd></div>
+          </dl>
+        </div>
+      </div>
+    </header>
+
+    <section class="gallery dark" aria-label="Photos">
+      <ul class="container photos">
+        {photos.map((p, i) => (
+          <li class={p.wide ? 'wide' : ''}>
+            <button type="button" data-index={i} data-full={p.full} data-alt={p.alt} aria-label={`Enlarge ${p.alt}`}>
+              <Picture
+                src={p.image}
+                widths={widthsFor(p.image)}
+                sizes={p.wide ? '(max-width: 1280px) 100vw, 1280px' : '(max-width: 760px) 100vw, 640px'}
+                formats={['avif', 'webp']}
+                alt={p.alt}
+                loading={i < 2 ? 'eager' : 'lazy'}
+              />
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    <nav class="container pager" aria-label="More projects">
+      <a href={`/work/${prev.slug}/`}><span class="eyebrow">Previous</span><span class="pager-title">{prev.title}</span></a>
+      <a href={`/work/${next.slug}/`} class="next"><span class="eyebrow">Next</span><span class="pager-title">{next.title}</span></a>
+    </nav>
+
+    <section class="cta">
+      <div class="container cta-inner">
+        <h2>Planning something similar?</h2>
+        <a class="btn" href="/#contact">Start a project</a>
+      </div>
+    </section>
+  </article>
+
+  <dialog class="lightbox" aria-label="Photo viewer">
+    <img alt="" />
+    <p class="count" aria-live="polite"></p>
+    <button type="button" class="close" aria-label="Close">×</button>
+    <button type="button" class="prev" aria-label="Previous photo">‹</button>
+    <button type="button" class="next" aria-label="Next photo">›</button>
+  </dialog>
+</Base>
+
+<script>
+  const dialog = document.querySelector<HTMLDialogElement>('.lightbox')!;
+  const view = dialog.querySelector('img')!;
+  const count = dialog.querySelector('.count')!;
+  const items = [...document.querySelectorAll<HTMLButtonElement>('.photos button')];
+  let index = 0;
+
+  const show = (i: number) => {
+    index = (i + items.length) % items.length;
+    view.src = items[index].dataset.full!;
+    view.alt = items[index].dataset.alt!;
+    count.textContent = `${index + 1} / ${items.length}`;
+  };
+
+  items.forEach((btn, i) => btn.addEventListener('click', () => { show(i); dialog.showModal(); }));
+  dialog.querySelector('.close')!.addEventListener('click', () => dialog.close());
+  dialog.querySelector('.prev')!.addEventListener('click', () => show(index - 1));
+  dialog.querySelector('.next')!.addEventListener('click', () => show(index + 1));
+  dialog.addEventListener('click', (e) => e.target === dialog && dialog.close());
+  dialog.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft') show(index - 1);
+    if (e.key === 'ArrowRight') show(index + 1);
+  });
+
+  // Swipe on touch screens.
+  let startX = 0;
+  dialog.addEventListener('touchstart', (e) => (startX = e.touches[0].clientX), { passive: true });
+  dialog.addEventListener('touchend', (e) => {
+    const dx = e.changedTouches[0].clientX - startX;
+    if (Math.abs(dx) > 50) show(index + (dx < 0 ? 1 : -1));
+  });
+  dialog.addEventListener('close', () => items[index]?.focus());
+</script>
+
+<style>
+  .head { padding-block: clamp(28px, 5vw, 64px) clamp(40px, 6vw, 80px); }
+  .back { display: inline-block; margin-bottom: clamp(32px, 5vw, 64px); }
+  .head-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(28px, 6vw, 96px); align-items: end; }
+  .summary .lede { color: var(--ink); }
+  dl { display: flex; flex-wrap: wrap; gap: 16px 48px; margin: 28px 0 0; padding-top: 22px; border-top: 1px solid var(--line); }
+  dt { font: 500 0.72rem/1 var(--sans); letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-2); margin-bottom: 8px; }
+  dd { margin: 0; font: 500 1.25rem/1.2 var(--serif); }
+
+  .gallery { padding-block: clamp(24px, 4vw, 56px); }
+  .photos {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(8px, 1.4vw, 20px);
+    list-style: none;
+    margin-block: 0;
+    padding: 0;
+  }
+  .photos li.wide { grid-column: 1 / -1; }
+  .photos :global(picture) { height: 100%; }
+  .photos button {
+    display: block;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    background: var(--night-2);
+    cursor: zoom-in;
+  }
+  .photos :global(img) { width: 100%; height: 100%; object-fit: cover; transition: opacity 0.3s; }
+  .photos li:not(.wide) :global(img) { aspect-ratio: 4 / 5; }
+  .photos button:hover :global(img) { opacity: 0.88; }
+
+  .pager { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding-block: clamp(40px, 6vw, 72px); border-bottom: 1px solid var(--line); }
+  .pager a { text-decoration: none; display: flex; flex-direction: column; gap: 4px; }
+  .pager .eyebrow { margin: 0; }
+  .pager .next { text-align: right; align-items: flex-end; }
+  .pager-title { font: 500 clamp(1.5rem, 2vw + 0.8rem, 2.4rem)/1.1 var(--serif); }
+
+  .cta { padding-block: clamp(56px, 8vw, 104px); }
+  .cta-inner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 24px; }
+
+  .lightbox {
+    width: 100vw;
+    height: 100dvh;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: clamp(16px, 4vw, 56px);
+    border: 0;
+    background: rgb(12 11 10 / 0.96);
+    color: var(--on-night);
+  }
+  .lightbox[open] { display: grid; place-items: center; }
+  .lightbox::backdrop { background: rgb(12 11 10 / 0.9); }
+  .lightbox img { max-width: 100%; max-height: calc(100dvh - 120px); object-fit: contain; }
+  .lightbox .count { position: absolute; left: 50%; bottom: 20px; transform: translateX(-50%); margin: 0; font-size: 0.85rem; letter-spacing: 0.12em; color: var(--on-night-2); }
+  .lightbox button {
+    position: absolute;
+    width: 48px;
+    height: 48px;
+    border: 0;
+    border-radius: 50%;
+    background: rgb(255 255 255 / 0.08);
+    color: var(--on-night);
+    font: 300 2rem/1 var(--sans);
+    cursor: pointer;
+  }
+  .lightbox button:hover { background: rgb(255 255 255 / 0.18); }
+  .lightbox .close { top: 16px; right: 16px; }
+  .lightbox .prev { left: 16px; top: 50%; transform: translateY(-50%); }
+  .lightbox .next { right: 16px; top: 50%; transform: translateY(-50%); }
+
+  @media (max-width: 900px) {
+    .head-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 760px) {
+    .photos { grid-template-columns: 1fr; }
+    .photos li:not(.wide) :global(img) { aspect-ratio: auto; }
+    .lightbox .prev, .lightbox .next { top: auto; bottom: 8px; transform: none; }
+  }
+</style>

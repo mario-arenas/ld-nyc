@@ -1,0 +1,65 @@
+---
+import Base from '../../layouts/Base.astro';
+import ProjectCard from '../../components/ProjectCard.astro';
+import { projects, categories } from '../../lib/projects';
+---
+<Base
+  title="Our Work | LD Creative Renovations"
+  description="Selected New York projects: lofts, penthouses, apartments and kitchens with custom millwork and cabinetry."
+>
+  <section class="container intro">
+    <p class="eyebrow">Our work</p>
+    <h1>Fifteen New York homes</h1>
+    <p class="lede">Lofts, apartments, penthouses and kitchens, each shaped around the people who live there.</p>
+  </section>
+
+  <section class="container" aria-label="Projects">
+    <div class="filters" role="group" aria-label="Filter projects">
+      <button type="button" aria-pressed="true" data-filter="all">All</button>
+      {categories.map((c) => <button type="button" aria-pressed="false" data-filter={c}>{c}</button>)}
+    </div>
+    <div class="cards">
+      {projects.map((p, i) => <ProjectCard project={p} eager={i < 3} />)}
+    </div>
+    <p class="credits">
+      Photography: John Caballero, Todd Eberle, Andreas Kornfeld, Ben Ritter, Iván Borges, Dietmar Busse Studio, Mario Arenas
+    </p>
+  </section>
+</Base>
+
+<script>
+  const buttons = document.querySelectorAll<HTMLButtonElement>('.filters button');
+  const cards = document.querySelectorAll<HTMLElement>('.cards .card');
+  buttons.forEach((btn) =>
+    btn.addEventListener('click', () => {
+      const f = btn.dataset.filter;
+      buttons.forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
+      cards.forEach((c) => (c.hidden = f !== 'all' && c.dataset.category !== f));
+    }),
+  );
+</script>
+
+<style>
+  .intro { padding-block: clamp(40px, 7vw, 96px) clamp(32px, 4vw, 56px); }
+  .intro h1 { margin-bottom: 20px; }
+  .filters { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: clamp(28px, 4vw, 48px); }
+  .filters button {
+    padding: 0.7em 1.15em;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--ink);
+    font: 450 0.8rem/1 var(--sans);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+  }
+  .filters button:hover { border-color: var(--ink); }
+  .filters button[aria-pressed='true'] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+  .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(28px, 3vw, 44px) clamp(20px, 2.4vw, 36px); }
+  .cards :global(.card[hidden]) { display: none; }
+  .credits { margin-block: clamp(56px, 8vw, 96px); font-size: 0.85rem; color: var(--ink-2); }
+  @media (max-width: 1024px) { .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 640px) { .cards { grid-template-columns: 1fr; } }
+</style>
